@@ -7,9 +7,10 @@ wechat channel
 import io
 import json
 import os
+import random
 import threading
 import time
-
+import re
 import requests
 
 from bridge.context import *
@@ -210,8 +211,22 @@ class WechatChannel(ChatChannel):
     def send(self, reply: Reply, context: Context):
         receiver = context["receiver"]
         if reply.type == ReplyType.TEXT:
-            itchat.send(reply.content, toUserName=receiver)
-            logger.info("[WX] sendMsg={}, receiver={}".format(reply, receiver))
+            # 按照。分割文本，并每隔3秒后，分段发送
+            text = reply.content
+            # text是否包含文本"一句话总结"和"关键要点"
+            if ("一句话总结" in text and "关键要点" in text) or "你可以问我关于这篇文章的任何问题" in text:
+                itchat.send(text, toUserName=receiver)
+            else:
+                # 去掉换行符
+                text = text.replace("\n", "")
+                # 以句号分割text，但是要保留句号或者问号结尾的句子
+                text_list = re.split('(?<=[。!？])', text)
+                for i in range(len(text_list)):
+                    # 如果不是空白的段落则分段
+                    if text_list[i].strip() != "":
+                        itchat.send(text_list[i], toUserName=receiver)
+                        time.sleep(random.uniform(2,5))
+                logger.info("[WX] sendMsg={}, receiver={}".format(reply, receiver))
         elif reply.type == ReplyType.ERROR or reply.type == ReplyType.INFO:
             itchat.send(reply.content, toUserName=receiver)
             logger.info("[WX] sendMsg={}, receiver={}".format(reply, receiver))
