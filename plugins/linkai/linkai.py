@@ -57,7 +57,7 @@ class LinkAI(Plugin):
             if not LinkSummary().check_file(file_path, self.sum_config):
                 return
             if context.type != ContextType.IMAGE:
-                _send_info(e_context, "熊猫小弟正在为你生成摘要，请稍后")
+                _send_info(e_context, "助手正在为你生成摘要，请稍后")
             res = LinkSummary().summary_file(file_path)
             if not res:
                 if context.type != ContextType.IMAGE:
@@ -66,7 +66,6 @@ class LinkAI(Plugin):
             summary_text = res.get("summary")
             if context.type != ContextType.IMAGE:
                 USER_FILE_MAP[_find_user_id(context) + "-sum_id"] = res.get("summary_id")
-                summary_text += "\n\n💬 @机器人, 可以基于摘要进行对话"
             _set_reply_text(summary_text, e_context, level=ReplyType.TEXT)
             os.remove(file_path)
             return
@@ -75,12 +74,12 @@ class LinkAI(Plugin):
                 (context.type == ContextType.TEXT and LinkSummary().check_url(context.content)):
             if not LinkSummary().check_url(context.content):
                 return
-            _send_info(e_context, "熊猫小弟正在为你生成摘要，请稍后")
+            _send_info(e_context, "助手正在为你生成摘要，请稍后")
             res = LinkSummary().summary_url(context.content)
             if not res:
                 _set_reply_text("因为神秘力量无法获取文章内容，请稍后再试吧~", e_context, level=ReplyType.TEXT)
                 return
-            _set_reply_text(res.get("summary") + "\n\n💬 @机器人, 可以基于摘要进行对话", e_context, level=ReplyType.TEXT)
+            _set_reply_text(res.get("summary"), e_context, level=ReplyType.TEXT)
             USER_FILE_MAP[_find_user_id(context) + "-sum_id"] = res.get("summary_id")
             return
 
