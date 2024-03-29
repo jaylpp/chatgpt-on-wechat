@@ -66,7 +66,12 @@ class LinkAI(Plugin):
             summary_text = res.get("summary")
             if context.type != ContextType.IMAGE:
                 USER_FILE_MAP[_find_user_id(context) + "-sum_id"] = res.get("summary_id")
-            _set_reply_text(summary_text, e_context, level=ReplyType.TEXT)
+
+            if conf().get("use_summary_chat"):
+                summary_text += "\n\n💬 发送 \"开启对话\" 可以开启与文件内容的对话"
+            else:
+                _set_reply_text(summary_text, e_context, level=ReplyType.TEXT)
+            #summary_text += "\n\n💬 发送 \"开启对话\" 可以开启与文件内容的对话"
             os.remove(file_path)
             return
 
@@ -79,7 +84,13 @@ class LinkAI(Plugin):
             if not res:
                 _set_reply_text("因为神秘力量无法获取文章内容，请稍后再试吧~", e_context, level=ReplyType.TEXT)
                 return
-            _set_reply_text(res.get("summary"), e_context, level=ReplyType.TEXT)
+
+            if conf().get("use_summary_chat"):
+                _set_reply_text(res.get("summary") + "\n\n💬 发送 \"开启对话\" 可以开启与文章内容的对话", e_context,
+                                level=ReplyType.TEXT)
+            else:
+                _set_reply_text(res.get("summary"), e_context, level=ReplyType.TEXT)
+            #_set_reply_text(res.get("summary") + "\n\n💬 发送 \"开启对话\" 可以开启与文章内容的对话", e_context, level=ReplyType.TEXT)
             USER_FILE_MAP[_find_user_id(context) + "-sum_id"] = res.get("summary_id")
             return
 
@@ -94,7 +105,7 @@ class LinkAI(Plugin):
             self._process_admin_cmd(e_context)
             return
 
-        if context.type == ContextType.TEXT and context.content == "开启对话" and _find_sum_id(context):
+        if conf().get("use_summary_chat") and context.type == ContextType.TEXT and context.content == "开启对话" and _find_sum_id(context):
             # 文本对话
             _send_info(e_context, "正在为你开启对话，请稍后")
             res = LinkSummary().summary_chat(_find_sum_id(context))
@@ -105,7 +116,7 @@ class LinkAI(Plugin):
             _set_reply_text("💡你可以问我关于这篇文章的任何问题，例如：\n\n" + res.get("questions") + "\n\n发送 \"退出对话\" 可以关闭与文章的对话", e_context, level=ReplyType.TEXT)
             return
 
-        if context.type == ContextType.TEXT and context.content == "退出对话" and _find_file_id(context):
+        if conf().get("use_summary_chat") and context.type == ContextType.TEXT and context.content == "退出对话" and _find_file_id(context):
             del USER_FILE_MAP[_find_user_id(context) + "-file_id"]
             bot = bridge.Bridge().find_chat_bot(const.LINKAI)
             bot.sessions.clear_session(context["session_id"])

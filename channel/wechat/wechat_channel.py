@@ -211,51 +211,70 @@ class WechatChannel(ChatChannel):
     def send(self, reply: Reply, context: Context):
         receiver = context["receiver"]
         if reply.type == ReplyType.TEXT:
-            # 按照。分割文本，并每隔3秒后，分段发送
-            text = reply.content
-            # text是否包含文本"一句话总结"和"关键要点"
-            if ("一句话总结" in text and "关键要点" in text) or "你可以问我关于这篇文章的任何问题" in text:
-                itchat.send(text, toUserName=receiver)
-            else:
-                text = text.replace("\n", "")  # 去除换行符
-                # 初始化变量
-                segment = ''  # 当前段落
-                i = 0  # 当前位置
-                # 循环直到文本结束
-                while i < len(text):
-                    # 累积字符到当前段落
-                    segment += text[i]
-                    i += 1
-                    # 当当前段落超过40个字符时，寻找下一个句号、问号或感叹号来分段
-                    if len(segment) >= 55:
-                        # 检查是否到达文本末尾或者下一个字符是分段符号
-                        if i == len(text) or text[i] in '。！？':
-                            # 发送当前段落
-                            if segment.strip() != "":
-                                itchat.send(segment, toUserName=receiver)
-                                time.sleep(random.uniform(2, 5))
-                            # 重置当前段落为下一个字符（如果有）
-                            segment = ''
-                        elif text[i] not in '。！？':
-                            # 如果当前字符不是分段符号，继绀查找下一个分段符号
-                            while i < len(text) and text[i] not in '。！？':
-                                segment += text[i]
-                                i += 1
-                            # 加上分段符号
-                            if i < len(text):
-                                segment += text[i]
-                                i += 1
-                            # 发送段落
-                            if segment.strip() != "":
-                                itchat.send(segment, toUserName=receiver)
-                                time.sleep(random.uniform(2, 5))
-                            segment = ''
 
-                # 检查是否还有剩余的段落未发送
-                if segment.strip() != "":
-                    itchat.send(segment, toUserName=receiver)
-                    time.sleep(random.uniform(2, 5))
+
+
+            if conf().get("use_split_section"):
+                text = reply.content
+                # text是否包含文本"一句话总结"和"关键要点"
+                if ("一句话总结" in text and "关键要点" in text) or "你可以问我关于这篇文章的任何问题" in text:
+                    itchat.send(text, toUserName=receiver)
+                else:
+                    # text = text.replace("\n", "")  # 去除换行符
+
+                    split_section_number = conf().get("spilt_section_number")
+                    logger.info("[WX] split_section_number={}".format(split_section_number))
+
+                    if split_section_number <= 10:
+                        split_section_number = 10
+                    else:
+                        split_section_number = split_section_number
+
+                    logger.info("[WX] final split_section_number={}".format(split_section_number))
+                    # 初始化变量
+                    segment = ''  # 当前段落
+                    i = 0  # 当前位置
+                    # 循环直到文本结束
+                    while i < len(text):
+                        # 累积字符到当前段落
+                        segment += text[i]
+                        i += 1
+                        # 当当前段落超过40个字符时，寻找下一个句号、问号或感叹号来分段
+                        if len(segment) >= split_section_number:
+                            # 检查是否到达文本末尾或者下一个字符是分段符号
+                            if i == len(text) or text[i] in '。！？':
+                                # 发送当前段落
+                                if segment.strip() != "":
+                                    # text去除收尾的空格
+
+                                    itchat.send(segment.strip(), toUserName=receiver)
+                                    time.sleep(random.uniform(2, 5))
+                                # 重置当前段落为下一个字符（如果有）
+                                segment = ''
+                            elif text[i] not in '。！？':
+                                # 如果当前字符不是分段符号，继绀查找下一个分段符号
+                                while i < len(text) and text[i] not in '。！？':
+                                    segment += text[i]
+                                    i += 1
+                                # 加上分段符号
+                                if i < len(text):
+                                    segment += text[i]
+                                    i += 1
+                                # 发送段落
+                                if segment.strip() != "":
+                                    itchat.send(segment.strip(), toUserName=receiver)
+                                    time.sleep(random.uniform(2, 5))
+                                segment = ''
+
+                    # 检查是否还有剩余的段落未发送
+                    if segment.strip() != "":
+                        itchat.send(segment.strip(), toUserName=receiver)
+                        time.sleep(random.uniform(2, 5))
+                    logger.info("[WX] sendMsg={}, receiver={}".format(reply, receiver))
+            else:
+                itchat.send(reply.content, toUserName=receiver)
                 logger.info("[WX] sendMsg={}, receiver={}".format(reply, receiver))
+
         elif reply.type == ReplyType.ERROR or reply.type == ReplyType.INFO:
             itchat.send(reply.content, toUserName=receiver)
             logger.info("[WX] sendMsg={}, receiver={}".format(reply, receiver))

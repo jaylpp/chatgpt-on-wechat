@@ -158,6 +158,9 @@ available_setting = {
     "linkai_api_key": "",
     "linkai_app_code": "",
     "linkai_api_base": "https://api.link-ai.chat",  # linkAI服务地址，若国内无法访问或延迟较高可改为 https://api.link-ai.tech
+    "use_split_section": False,  # 是否开启分段发送,
+    "spilt_section_number": 55,
+    "use_summary_chat": True,  # 是否开启摘要追问
 }
 
 
