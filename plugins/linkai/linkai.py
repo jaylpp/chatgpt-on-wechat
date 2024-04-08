@@ -69,6 +69,7 @@ class LinkAI(Plugin):
 
             if conf().get("use_summary_chat"):
                 summary_text += "\n\n💬 发送 \"开启对话\" 可以开启与文件内容的对话"
+                _set_reply_text(summary_text, e_context, level=ReplyType.TEXT)
             else:
                 _set_reply_text(summary_text, e_context, level=ReplyType.TEXT)
             #summary_text += "\n\n💬 发送 \"开启对话\" 可以开启与文件内容的对话"
